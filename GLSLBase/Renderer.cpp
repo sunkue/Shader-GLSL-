@@ -26,9 +26,6 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 
 	//Load shaders
 	m_SolidRectShader = CompileShaders("./Shaders/SolidRect.vs", "./Shaders/SolidRect.fs");
-	
-	//Create VBOs
-	CreateVertexBufferObjects();
 
 	//Initialize camera settings
 	m_v3Camera_Position = glm::vec3(0.f, 0.f, 1000.f);
@@ -53,21 +50,12 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 
 	//Initialize model transform matrix :; used for rotating quad normal to parallel to camera direction
 	m_m4Model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(1.f, 0.f, 0.f));
+
+
+	CreateParticles(300);
 }
 
-void Renderer::CreateVertexBufferObjects()
-{
-	float rect[]
-		=
-	{
-		-0.5, -0.5, 0.f, -0.5, 0.5, 0.f, 0.5, 0.5, 0.f, //Triangle1
-		-0.5, -0.5, 0.f,  0.5, 0.5, 0.f, 0.5, -0.5, 0.f, //Triangle2
-	};
 
-	glGenBuffers(1, &m_VBORect);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(rect), rect, GL_STATIC_DRAW);
-}
 
 void Renderer::AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
@@ -294,16 +282,58 @@ GLuint Renderer::CreateBmpTexture(char * filePath)
 	return temp;
 }
 
+void Renderer::CreateParticles(const size_t num) {
+	constexpr GLfloat scale{ 0.01f };
+	constexpr size_t shapeVertexNum{ 3 }; /* triangle => 3 */
+	constexpr size_t shapeNum{ 2 };
+	constexpr size_t indicesNum{ shapeVertexNum * shapeNum };
+	constexpr GLuint rectIndices[indicesNum]{ 0,2,3,0,1,2 };
+	constexpr size_t verticesNum{ 4 };
+	const uniform_int_distribution<> uid{ -1000 ,1000 };
+	glm::vec3 rectVertices[verticesNum]
+		=
+	{
+		{-1.f,-1.f,1.f},	{1.f,-1.f,1.f},	{1.f, 1.f,1.f},	{-1.f,1.f,1.f}	//rect DL,DR,UR,UL
+	};
+	const size_t VerticesCount{ num * 4 };
+	m_ElementsCount = num * indicesNum;
+	const unique_ptr<glm::vec3[]> Vertices{ make_unique<glm::vec3[]>(VerticesCount) };
+	const unique_ptr<GLuint[]> Indices{ make_unique<GLuint[]>(m_ElementsCount) };
+	for (int i = 0, vi{ 0 }, ii{ 0 }; i < num; ++i) {
+		const glm::vec3 pivot{ uid(dre) * 0.001f ,uid(dre) * 0.001f,0.f };
+		for (int j = 0; j < verticesNum; ++j) {
+			Vertices[vi++] = (scale * rectVertices[j]) + pivot;
+		}
+		for (int j = 0; j < indicesNum; ++j) {
+			Indices[ii++] = rectIndices[j] + (i * verticesNum);
+		}
+	}
+
+	glGenVertexArrays(1, &m_VAOtest);
+	glBindVertexArray(m_VAOtest);
+	GLuint abo;
+	GLuint ebo;
+	glGenBuffers(1, &abo);
+	glBindBuffer(GL_ARRAY_BUFFER, abo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * VerticesCount, Vertices.get(), GL_STATIC_DRAW);
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_ElementsCount, Indices.get(), GL_STATIC_DRAW);
+	glBindVertexArray(0);
+}
+
 void Renderer::Test()
 {
 	glUseProgram(m_SolidRectShader);
 
 	int attribPosition = glGetAttribLocation(m_SolidRectShader, "a_Position");
 	glEnableVertexAttribArray(attribPosition);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
-	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
 
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(m_VAOtest);
 
+	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glDrawElements(GL_TRIANGLES, m_ElementsCount, GL_UNSIGNED_INT, 0);
 	glDisableVertexAttribArray(attribPosition);
+	//glBindVertexArray(0);
 }

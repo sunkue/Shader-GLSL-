@@ -27,7 +27,7 @@ private:
 	bool ReadFile(char* filename, std::string *target);
 	void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType);
 	GLuint CompileShaders(char* filenameVS, char* filenameFS);
-	void CreateVertexBufferObjects(); 
+	void CreateParticles(const size_t num);
 	unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWidth, unsigned int& outHeight);
 
 	bool m_Initialized = false;
@@ -48,7 +48,13 @@ private:
 	glm::mat4 m_m4View;
 	glm::mat4 m_m4ProjView;
 
-	GLuint m_VBORect = 0;
 	GLuint m_SolidRectShader = 0;
+	
+
+
+
+	GLuint m_ElementsCount{ 0 };
+	GLuint m_VAOtest{ 0 };
+
 };
 
