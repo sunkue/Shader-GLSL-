@@ -4,12 +4,25 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "Dependencies\glew.h"
 #include "Dependencies\wglew.h"
 #include "Dependencies\glm/glm.hpp"
 #include "Dependencies\glm/gtc/matrix_transform.hpp"
 #include "Dependencies\glm/gtx/euler_angles.hpp"
+
+
+using std::vector;
+
+struct Vertex {
+	glm::vec3 pos;
+	glm::vec3 vel;
+};
+
+struct Obj {
+	vector<Vertex> Vertices;
+};
 
 class Renderer
 {
@@ -50,10 +63,7 @@ private:
 
 	GLuint m_SolidRectShader = 0;
 	
-
-
-
-	GLuint m_ElementsCount{ 0 };
+	Obj obj;
 	GLuint m_VAOtest{ 0 };
 
 };

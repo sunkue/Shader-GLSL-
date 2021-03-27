@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <cstdlib>
 #include <cassert>
+#include <chrono>
 
 Renderer::Renderer(int windowSizeX, int windowSizeY)
 {
@@ -287,26 +288,28 @@ void Renderer::CreateParticles(const size_t num) {
 	constexpr size_t shapeVertexNum{ 3 }; /* triangle => 3 */
 	constexpr size_t shapeNum{ 2 };
 	constexpr size_t indicesNum{ shapeVertexNum * shapeNum };
-	constexpr GLuint rectIndices[indicesNum]{ 0,2,3,0,1,2 };
-	constexpr size_t verticesNum{ 4 };
+	constexpr size_t verticesNum{ 6 };
 	const uniform_int_distribution<> uid{ -1000 ,1000 };
 	glm::vec3 rectVertices[verticesNum]
 		=
 	{
-		{-1.f,-1.f,1.f},	{1.f,-1.f,1.f},	{1.f, 1.f,1.f},	{-1.f,1.f,1.f}	//rect DL,DR,UR,UL
+		{-1.f,-1.f,1.f},	{1.f,-1.f,1.f},	{1.f, 1.f,1.f},	
+		{-1.f,-1.f,1.f} ,	{1.f, 1.f,1.f},	{-1.f,1.f,1.f}
 	};
-	const size_t VerticesCount{ num * 4 };
-	m_ElementsCount = num * indicesNum;
-	const unique_ptr<glm::vec3[]> Vertices{ make_unique<glm::vec3[]>(VerticesCount) };
-	const unique_ptr<GLuint[]> Indices{ make_unique<GLuint[]>(m_ElementsCount) };
+	const size_t VerticesCount{ num * verticesNum };
+
+	
+	obj.Vertices.resize(VerticesCount);
+
 	for (int i = 0, vi{ 0 }, ii{ 0 }; i < num; ++i) {
-		const glm::vec3 pivot{ uid(dre) * 0.001f ,uid(dre) * 0.001f,0.f };
+		const glm::vec3 posPivot{ uid(dre) * 0.001f ,uid(dre) * 0.001f,0.f };
+		const glm::vec3 velPivot{ uid(dre) * 0.000001f ,uid(dre) * 0.000001f,0.f };
 		for (int j = 0; j < verticesNum; ++j) {
-			Vertices[vi++] = (scale * rectVertices[j]) + pivot;
+			obj.Vertices[vi].pos = (scale * rectVertices[j]) + posPivot;
+			obj.Vertices[vi].vel = velPivot;
+			vi++;
 		}
-		for (int j = 0; j < indicesNum; ++j) {
-			Indices[ii++] = rectIndices[j] + (i * verticesNum);
-		}
+
 	}
 
 	glGenVertexArrays(1, &m_VAOtest);
@@ -315,25 +318,33 @@ void Renderer::CreateParticles(const size_t num) {
 	GLuint ebo;
 	glGenBuffers(1, &abo);
 	glBindBuffer(GL_ARRAY_BUFFER, abo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * VerticesCount, Vertices.get(), GL_STATIC_DRAW);
-	glGenBuffers(1, &ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_ElementsCount, Indices.get(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * obj.Vertices.size(), obj.Vertices.data(), GL_STATIC_DRAW);
+
 	glBindVertexArray(0);
 }
+
+using clk = std::chrono::high_resolution_clock;
+auto tPivot{ clk::now() };
 
 void Renderer::Test()
 {
 	glUseProgram(m_SolidRectShader);
 
-	int attribPosition = glGetAttribLocation(m_SolidRectShader, "a_Position");
-	glEnableVertexAttribArray(attribPosition);
-
 	glBindVertexArray(m_VAOtest);
 
-	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	int attribPosition = glGetAttribLocation(m_SolidRectShader, "a_Position");
+	glEnableVertexAttribArray(attribPosition);
+	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, pos));
 
-	glDrawElements(GL_TRIANGLES, m_ElementsCount, GL_UNSIGNED_INT, 0);
+	int attribVelocity = glGetAttribLocation(m_SolidRectShader, "a_Velocity");
+	glEnableVertexAttribArray(attribVelocity);
+	glVertexAttribPointer(attribVelocity, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, vel));
+	
+	GLint uniformTime = glGetUniformLocation(m_SolidRectShader, "u_time");
+	glUniform1f(uniformTime, static_cast<std::chrono::duration<float, std::milli>>(clk::now() - tPivot).count());
+	
+	glDrawArrays(GL_TRIANGLES, 0, obj.Vertices.size());
 	glDisableVertexAttribArray(attribPosition);
+	glDisableVertexAttribArray(attribVelocity);
 	//glBindVertexArray(0);
 }
