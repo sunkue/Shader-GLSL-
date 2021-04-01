@@ -32,7 +32,7 @@ void main()
 		vec3 head = normalize(vel);			// 이동방향
 		vec3 right = cross(head,vec3(0,0,1));	// 이동방향과 카메라방향 외적 => 사인진동축
 		newPos = newPos + movement;
-		newPos += right * sin(time*0.005f * a_P) * a_A;		// 진동축 기준 진동
+		newPos += right * sin(time * a_P) * a_A;		// 진동축 기준 진동
 		
 	}
 	gl_Position = vec4(newPos, 1);
