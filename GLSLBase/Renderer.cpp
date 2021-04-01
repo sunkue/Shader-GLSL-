@@ -308,10 +308,10 @@ void Renderer::CreateParticles(const size_t num) {
 		//const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(rand() % LIFETIME)).count() };
 		const glm::vec3 posPivot{ 0.f ,0.f, 0.f };
 		const glm::vec3 velPivot{ cos(i*10)*0.001f ,sin(i*10)*0.001f,0.f };
-		const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(i*10)).count() };
+		const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(i*100)).count() };
 		
-		const GLfloat a{ uid(dre) * 0.0001f };
-		const GLfloat p{ uid(dre) * 0.0001f };
+		const GLfloat a{ uid(dre) * 0.0001f + uid(dre) * 0.00001f };
+		const GLfloat p{ uid(dre) * 0.00005f + uid(dre) * 0.00001f };
 		for (int j = 0; j < verticesNum; ++j) {
 			obj.Vertices[vi].pos = (scale * rectVertices[j]) + posPivot;
 			obj.Vertices[vi].vel = velPivot;
