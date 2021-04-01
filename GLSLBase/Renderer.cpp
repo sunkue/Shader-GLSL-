@@ -93,7 +93,7 @@ void Renderer::AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum S
 	glAttachShader(ShaderProgram, ShaderObj);
 }
 
-bool Renderer::ReadFile(char* filename, std::string *target)
+bool Renderer::ReadFile(char* filename, std::string* target)
 {
 	std::ifstream file(filename);
 	if (file.fail())
@@ -167,7 +167,7 @@ GLuint Renderer::CompileShaders(char* filenameVS, char* filenameFS)
 
 	return ShaderProgram;
 }
-unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWidth, unsigned int& outHeight)
+unsigned char* Renderer::loadBMPRaw(const char* imagepath, unsigned int& outWidth, unsigned int& outHeight)
 {
 	std::cout << "Loading bmp file " << imagepath << " ... " << std::endl;
 	outWidth = -1;
@@ -177,10 +177,10 @@ unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWi
 	unsigned int dataPos;
 	unsigned int imageSize;
 	// Actual RGB data
-	unsigned char * data;
+	unsigned char* data;
 
 	// Open the file
-	FILE * file = NULL;
+	FILE* file = NULL;
 	fopen_s(&file, imagepath, "rb");
 	if (!file)
 	{
@@ -234,7 +234,7 @@ unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWi
 	return data;
 }
 
-GLuint Renderer::CreatePngTexture(char * filePath)
+GLuint Renderer::CreatePngTexture(char* filePath)
 {
 	//Load Pngs: Load file and decode image.
 	std::vector<unsigned char> image;
@@ -258,11 +258,11 @@ GLuint Renderer::CreatePngTexture(char * filePath)
 	return temp;
 }
 
-GLuint Renderer::CreateBmpTexture(char * filePath)
+GLuint Renderer::CreateBmpTexture(char* filePath)
 {
 	//Load Bmp: Load file and decode image.
 	unsigned int width, height;
-	unsigned char * bmp
+	unsigned char* bmp
 		= loadBMPRaw(filePath, width, height);
 
 	if (bmp == NULL)
@@ -283,6 +283,7 @@ GLuint Renderer::CreateBmpTexture(char * filePath)
 	return temp;
 }
 
+constexpr unsigned int LIFETIME{ 5'000 };
 void Renderer::CreateParticles(const size_t num) {
 	constexpr GLfloat scale{ 0.01f };
 	constexpr size_t shapeVertexNum{ 3 }; /* triangle => 3 */
@@ -293,20 +294,30 @@ void Renderer::CreateParticles(const size_t num) {
 	glm::vec3 rectVertices[verticesNum]
 		=
 	{
-		{-1.f,-1.f,1.f},	{1.f,-1.f,1.f},	{1.f, 1.f,1.f},	
+		{-1.f,-1.f,1.f},	{1.f,-1.f,1.f},	{1.f, 1.f,1.f},
 		{-1.f,-1.f,1.f} ,	{1.f, 1.f,1.f},	{-1.f,1.f,1.f}
 	};
 	const size_t VerticesCount{ num * verticesNum };
 
-	
+
 	obj.Vertices.resize(VerticesCount);
 
-	for (int i = 0, vi{ 0 }, ii{ 0 }; i < num; ++i) {
-		const glm::vec3 posPivot{ uid(dre) * 0.001f ,uid(dre) * 0.001f,0.f };
-		const glm::vec3 velPivot{ uid(dre) * 0.000001f ,uid(dre) * 0.000001f,0.f };
+	for (int i = 0, vi = 0, ii = 0; i < num; ++i) {
+		//const glm::vec3 posPivot{ uid(dre) * 0.001f ,uid(dre) * 0.001f,0.f };
+		//const glm::vec3 velPivot{ uid(dre) * 0.000001f ,uid(dre) * 0.000001f,0.f };
+		//const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(rand() % LIFETIME)).count() };
+		const glm::vec3 posPivot{ 0.f ,0.f, 0.f };
+		const glm::vec3 velPivot{ cos(i*10)*0.001f ,sin(i*10)*0.001f,0.f };
+		const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(i*10)).count() };
+		
+		const GLfloat a{ uid(dre) * 0.0001f };
+		const GLfloat p{ uid(dre) * 0.0001f };
 		for (int j = 0; j < verticesNum; ++j) {
 			obj.Vertices[vi].pos = (scale * rectVertices[j]) + posPivot;
 			obj.Vertices[vi].vel = velPivot;
+			obj.Vertices[vi].emitTime = emit;
+			obj.Vertices[vi].A = a;
+			obj.Vertices[vi].P = p;
 			vi++;
 		}
 
@@ -339,10 +350,25 @@ void Renderer::Test()
 	int attribVelocity = glGetAttribLocation(m_SolidRectShader, "a_Velocity");
 	glEnableVertexAttribArray(attribVelocity);
 	glVertexAttribPointer(attribVelocity, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, vel));
-	
-	GLint uniformTime = glGetUniformLocation(m_SolidRectShader, "u_time");
+
+	int attribEmitTime = glGetAttribLocation(m_SolidRectShader, "a_EmitTime");
+	glEnableVertexAttribArray(attribEmitTime);
+	glVertexAttribPointer(attribEmitTime, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, emitTime));
+
+	int attribA = glGetAttribLocation(m_SolidRectShader, "a_A");
+	glEnableVertexAttribArray(attribA);
+	glVertexAttribPointer(attribA, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, A));
+
+	int attribP = glGetAttribLocation(m_SolidRectShader, "a_P");
+	glEnableVertexAttribArray(attribP);
+	glVertexAttribPointer(attribP, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, P));
+
+	GLint uniformTime = glGetUniformLocation(m_SolidRectShader, "u_Time");
 	glUniform1f(uniformTime, static_cast<std::chrono::duration<float, std::milli>>(clk::now() - tPivot).count());
-	
+
+	GLint uniformLifeTime = glGetUniformLocation(m_SolidRectShader, "u_LifeTime");
+	glUniform1f(uniformLifeTime, static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(1000)).count());
+
 	glDrawArrays(GL_TRIANGLES, 0, obj.Vertices.size());
 	glDisableVertexAttribArray(attribPosition);
 	glDisableVertexAttribArray(attribVelocity);

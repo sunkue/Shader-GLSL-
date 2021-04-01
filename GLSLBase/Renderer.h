@@ -18,6 +18,9 @@ using std::vector;
 struct Vertex {
 	glm::vec3 pos;
 	glm::vec3 vel;
+	GLfloat emitTime;
+	GLfloat A;
+	GLfloat P;
 };
 
 struct Obj {
