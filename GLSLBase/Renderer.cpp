@@ -52,8 +52,8 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 	//Initialize model transform matrix :; used for rotating quad normal to parallel to camera direction
 	m_m4Model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(1.f, 0.f, 0.f));
 
-
-	CreateParticles(300);
+	
+	CreateParticles(3000);
 }
 
 
@@ -336,10 +336,27 @@ void Renderer::CreateParticles(const size_t num) {
 
 using clk = std::chrono::high_resolution_clock;
 auto tPivot{ clk::now() };
-
+/*
 void Renderer::Test()
 {
 	glUseProgram(m_SolidRectShader);
+
+	int attribPosition = glGetAttribLocation(m_SolidRectShader, "a_Position");
+	glEnableVertexAttribArray(attribPosition);
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
+	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glDisableVertexAttribArray(attribPosition);
+}
+*/
+void Renderer::Test()
+{
+	glUseProgram(m_SolidRectShader);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glBindVertexArray(m_VAOtest);
 
@@ -372,5 +389,6 @@ void Renderer::Test()
 	glDrawArrays(GL_TRIANGLES, 0, obj.Vertices.size());
 	glDisableVertexAttribArray(attribPosition);
 	glDisableVertexAttribArray(attribVelocity);
-	//glBindVertexArray(0);
+	glBindVertexArray(0);
+	glDisable(GL_BLEND);
 }

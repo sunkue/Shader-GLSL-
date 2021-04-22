@@ -1,4 +1,4 @@
-#version 460
+#version 450
 
 in vec3 a_Position;
 in vec3 a_Velocity;
@@ -10,7 +10,7 @@ uniform float u_Time;
 uniform float u_LifeTime;
 
 //const vec3 c_Gravity = vec3(0.f,-0.001,0.f);
-
+varying vec4 v_color;
 
 void main()
 {
@@ -36,4 +36,5 @@ void main()
 		
 	}
 	gl_Position = vec4(newPos, 1);
+	v_color = gl_Position;
 }

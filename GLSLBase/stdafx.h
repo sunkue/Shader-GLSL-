@@ -11,12 +11,6 @@
 #include <algorithm>
 #include <iostream>
 
-using std::pair;
-using std::vector;
-using std::uniform_int_distribution;
-using std::default_random_engine;
-using std::unique_ptr;
-using std::make_unique;
-using std::cout;
+using namespace std;
 
 extern default_random_engine dre;
