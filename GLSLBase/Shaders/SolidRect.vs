@@ -4,12 +4,12 @@ in vec3 a_Position;
 
 uniform float u_Time;
 
-varying vec4 v_Color;
+varying vec4 v_color;
 
 void main()
 {
 	vec3 newPos = a_Position;
 	
 	gl_Position = vec4(a_Position, 1);
-	v_Color = gl_Position;
+	v_color = gl_Position;
 }
