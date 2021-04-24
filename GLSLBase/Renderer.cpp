@@ -26,7 +26,7 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 
 	//Load shaders
 	m_FSSandBoxShader = CompileShaders("./Shaders/SolidRect.vs", "./Shaders/SolidRect.fs");
-	
+
 	//Create VBOs
 	CreateVertexBufferObjects();
 
@@ -57,11 +57,12 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 
 void Renderer::CreateVertexBufferObjects()
 {
+	constexpr float rectSize{ 0.95f };
 	float rect[]
 		=
 	{
-		-0.5, -0.5, 0.f, -0.5, 0.5, 0.f, 0.5, 0.5, 0.f, //Triangle1
-		-0.5, -0.5, 0.f,  0.5, 0.5, 0.f, 0.5, -0.5, 0.f, //Triangle2
+		-rectSize, -rectSize, 0.f, -rectSize, rectSize, 0.f, rectSize, rectSize, 0.f, //Triangle1
+		-rectSize, -rectSize, 0.f,  rectSize, rectSize, 0.f, rectSize, -rectSize, 0.f, //Triangle2
 	};
 
 	glGenBuffers(1, &m_VBORect);
@@ -104,7 +105,7 @@ void Renderer::AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum S
 	glAttachShader(ShaderProgram, ShaderObj);
 }
 
-bool Renderer::ReadFile(char* filename, std::string *target)
+bool Renderer::ReadFile(char* filename, std::string* target)
 {
 	std::ifstream file(filename);
 	if (file.fail())
@@ -178,7 +179,7 @@ GLuint Renderer::CompileShaders(char* filenameVS, char* filenameFS)
 
 	return ShaderProgram;
 }
-unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWidth, unsigned int& outHeight)
+unsigned char* Renderer::loadBMPRaw(const char* imagepath, unsigned int& outWidth, unsigned int& outHeight)
 {
 	std::cout << "Loading bmp file " << imagepath << " ... " << std::endl;
 	outWidth = -1;
@@ -188,10 +189,10 @@ unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWi
 	unsigned int dataPos;
 	unsigned int imageSize;
 	// Actual RGB data
-	unsigned char * data;
+	unsigned char* data;
 
 	// Open the file
-	FILE * file = NULL;
+	FILE* file = NULL;
 	fopen_s(&file, imagepath, "rb");
 	if (!file)
 	{
@@ -245,7 +246,7 @@ unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWi
 	return data;
 }
 
-GLuint Renderer::CreatePngTexture(char * filePath)
+GLuint Renderer::CreatePngTexture(char* filePath)
 {
 	//Load Pngs: Load file and decode image.
 	std::vector<unsigned char> image;
@@ -269,11 +270,11 @@ GLuint Renderer::CreatePngTexture(char * filePath)
 	return temp;
 }
 
-GLuint Renderer::CreateBmpTexture(char * filePath)
+GLuint Renderer::CreateBmpTexture(char* filePath)
 {
 	//Load Bmp: Load file and decode image.
 	unsigned int width, height;
-	unsigned char * bmp
+	unsigned char* bmp
 		= loadBMPRaw(filePath, width, height);
 
 	if (bmp == NULL)
@@ -293,28 +294,39 @@ GLuint Renderer::CreateBmpTexture(char * filePath)
 
 	return temp;
 }
-using clk = std::chrono::high_resolution_clock;
+random_device rd;
+default_random_engine dre{ rd() };
+uniform_real_distribution<float> urd{ -1.f , 1.f };
 auto tPivot{ clk::now() };
 
 void Renderer::FsSandBox()
 {
 	GLuint shader = m_FSSandBoxShader;
 	glUseProgram(shader);
-	
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 
 
-	int attribPosition = glGetAttribLocation(shader, "a_Position");
+	GLint attribPosition = glGetAttribLocation(shader, "a_Position");
 	glEnableVertexAttribArray(attribPosition);
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
 	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
-	
+
 	GLint uniformTime = glGetUniformLocation(shader, "u_Time");
 	glUniform1f(uniformTime, static_cast<std::chrono::duration<float, std::milli>>(clk::now() - tPivot).count());
 
+	GLint uniformPoint = glGetUniformLocation(shader, "u_Point");
+	glUniform3f(uniformPoint, 0.f, 0.f, 0.f);
+
+	constexpr size_t PointsNum{ 10 };
+	static GLfloat Points[PointsNum][3];
+	static bool init{ true };
+	if (init)for (int i = 0; i < PointsNum * 3; ++i, init = false)Points[0][i] = urd(dre);
+	GLint uniformPoints = glGetUniformLocation(shader, "u_Points");
+	glUniform3fv(uniformPoints, PointsNum, *Points);
 
 
 
