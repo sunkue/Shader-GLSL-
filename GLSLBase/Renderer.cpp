@@ -4,7 +4,6 @@
 #include <Windows.h>
 #include <cstdlib>
 #include <cassert>
-#include <chrono>
 
 Renderer::Renderer(int windowSizeX, int windowSizeY)
 {
@@ -26,7 +25,10 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 	m_WindowSizeY = windowSizeY;
 
 	//Load shaders
-	m_SolidRectShader = CompileShaders("./Shaders/SolidRect.vs", "./Shaders/SolidRect.fs");
+	m_FSSandBoxShader = CompileShaders("./Shaders/SolidRect.vs", "./Shaders/SolidRect.fs");
+	
+	//Create VBOs
+	CreateVertexBufferObjects();
 
 	//Initialize camera settings
 	m_v3Camera_Position = glm::vec3(0.f, 0.f, 1000.f);
@@ -51,12 +53,21 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 
 	//Initialize model transform matrix :; used for rotating quad normal to parallel to camera direction
 	m_m4Model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(1.f, 0.f, 0.f));
-
-	
-	CreateParticles(3000);
 }
 
+void Renderer::CreateVertexBufferObjects()
+{
+	float rect[]
+		=
+	{
+		-0.5, -0.5, 0.f, -0.5, 0.5, 0.f, 0.5, 0.5, 0.f, //Triangle1
+		-0.5, -0.5, 0.f,  0.5, 0.5, 0.f, 0.5, -0.5, 0.f, //Triangle2
+	};
 
+	glGenBuffers(1, &m_VBORect);
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(rect), rect, GL_STATIC_DRAW);
+}
 
 void Renderer::AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
@@ -93,7 +104,7 @@ void Renderer::AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum S
 	glAttachShader(ShaderProgram, ShaderObj);
 }
 
-bool Renderer::ReadFile(char* filename, std::string* target)
+bool Renderer::ReadFile(char* filename, std::string *target)
 {
 	std::ifstream file(filename);
 	if (file.fail())
@@ -167,7 +178,7 @@ GLuint Renderer::CompileShaders(char* filenameVS, char* filenameFS)
 
 	return ShaderProgram;
 }
-unsigned char* Renderer::loadBMPRaw(const char* imagepath, unsigned int& outWidth, unsigned int& outHeight)
+unsigned char * Renderer::loadBMPRaw(const char * imagepath, unsigned int& outWidth, unsigned int& outHeight)
 {
 	std::cout << "Loading bmp file " << imagepath << " ... " << std::endl;
 	outWidth = -1;
@@ -177,10 +188,10 @@ unsigned char* Renderer::loadBMPRaw(const char* imagepath, unsigned int& outWidt
 	unsigned int dataPos;
 	unsigned int imageSize;
 	// Actual RGB data
-	unsigned char* data;
+	unsigned char * data;
 
 	// Open the file
-	FILE* file = NULL;
+	FILE * file = NULL;
 	fopen_s(&file, imagepath, "rb");
 	if (!file)
 	{
@@ -234,7 +245,7 @@ unsigned char* Renderer::loadBMPRaw(const char* imagepath, unsigned int& outWidt
 	return data;
 }
 
-GLuint Renderer::CreatePngTexture(char* filePath)
+GLuint Renderer::CreatePngTexture(char * filePath)
 {
 	//Load Pngs: Load file and decode image.
 	std::vector<unsigned char> image;
@@ -258,11 +269,11 @@ GLuint Renderer::CreatePngTexture(char* filePath)
 	return temp;
 }
 
-GLuint Renderer::CreateBmpTexture(char* filePath)
+GLuint Renderer::CreateBmpTexture(char * filePath)
 {
 	//Load Bmp: Load file and decode image.
 	unsigned int width, height;
-	unsigned char* bmp
+	unsigned char * bmp
 		= loadBMPRaw(filePath, width, height);
 
 	if (bmp == NULL)
@@ -282,113 +293,32 @@ GLuint Renderer::CreateBmpTexture(char* filePath)
 
 	return temp;
 }
-
-constexpr unsigned int LIFETIME{ 5'000 };
-void Renderer::CreateParticles(const size_t num) {
-	constexpr GLfloat scale{ 0.01f };
-	constexpr size_t shapeVertexNum{ 3 }; /* triangle => 3 */
-	constexpr size_t shapeNum{ 2 };
-	constexpr size_t indicesNum{ shapeVertexNum * shapeNum };
-	constexpr size_t verticesNum{ 6 };
-	const uniform_int_distribution<> uid{ -1000 ,1000 };
-	glm::vec3 rectVertices[verticesNum]
-		=
-	{
-		{-1.f,-1.f,1.f},	{1.f,-1.f,1.f},	{1.f, 1.f,1.f},
-		{-1.f,-1.f,1.f} ,	{1.f, 1.f,1.f},	{-1.f,1.f,1.f}
-	};
-	const size_t VerticesCount{ num * verticesNum };
-
-
-	obj.Vertices.resize(VerticesCount);
-
-	for (int i = 0, vi = 0, ii = 0; i < num; ++i) {
-		//const glm::vec3 posPivot{ uid(dre) * 0.001f ,uid(dre) * 0.001f,0.f };
-		//const glm::vec3 velPivot{ uid(dre) * 0.000001f ,uid(dre) * 0.000001f,0.f };
-		//const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(rand() % LIFETIME)).count() };
-		const glm::vec3 posPivot{ 0.f ,0.f, 0.f };
-		const glm::vec3 velPivot{ cos(i*10)*0.001f ,sin(i*10)*0.001f,0.f };
-		const GLfloat emit{ static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(i*100)).count() };
-		
-		const GLfloat a{ uid(dre) * 0.0001f + uid(dre) * 0.00001f };
-		const GLfloat p{ uid(dre) * 0.00005f + uid(dre) * 0.00001f };
-		for (int j = 0; j < verticesNum; ++j) {
-			obj.Vertices[vi].pos = (scale * rectVertices[j]) + posPivot;
-			obj.Vertices[vi].vel = velPivot;
-			obj.Vertices[vi].emitTime = emit;
-			obj.Vertices[vi].A = a;
-			obj.Vertices[vi].P = p;
-			vi++;
-		}
-
-	}
-
-	glGenVertexArrays(1, &m_VAOtest);
-	glBindVertexArray(m_VAOtest);
-	GLuint abo;
-	GLuint ebo;
-	glGenBuffers(1, &abo);
-	glBindBuffer(GL_ARRAY_BUFFER, abo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * obj.Vertices.size(), obj.Vertices.data(), GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
-}
-
 using clk = std::chrono::high_resolution_clock;
 auto tPivot{ clk::now() };
-/*
-void Renderer::Test()
+
+void Renderer::FsSandBox()
 {
-	glUseProgram(m_SolidRectShader);
-
-	int attribPosition = glGetAttribLocation(m_SolidRectShader, "a_Position");
-	glEnableVertexAttribArray(attribPosition);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
-	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
-
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	glDisableVertexAttribArray(attribPosition);
-}
-*/
-void Renderer::Test()
-{
-	glUseProgram(m_SolidRectShader);
-
+	GLuint shader = m_FSSandBoxShader;
+	glUseProgram(shader);
+	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glBindVertexArray(m_VAOtest);
 
-	int attribPosition = glGetAttribLocation(m_SolidRectShader, "a_Position");
+
+
+	int attribPosition = glGetAttribLocation(shader, "a_Position");
 	glEnableVertexAttribArray(attribPosition);
-	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, pos));
-
-	int attribVelocity = glGetAttribLocation(m_SolidRectShader, "a_Velocity");
-	glEnableVertexAttribArray(attribVelocity);
-	glVertexAttribPointer(attribVelocity, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, vel));
-
-	int attribEmitTime = glGetAttribLocation(m_SolidRectShader, "a_EmitTime");
-	glEnableVertexAttribArray(attribEmitTime);
-	glVertexAttribPointer(attribEmitTime, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, emitTime));
-
-	int attribA = glGetAttribLocation(m_SolidRectShader, "a_A");
-	glEnableVertexAttribArray(attribA);
-	glVertexAttribPointer(attribA, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, A));
-
-	int attribP = glGetAttribLocation(m_SolidRectShader, "a_P");
-	glEnableVertexAttribArray(attribP);
-	glVertexAttribPointer(attribP, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, P));
-
-	GLint uniformTime = glGetUniformLocation(m_SolidRectShader, "u_Time");
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
+	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+	
+	GLint uniformTime = glGetUniformLocation(shader, "u_Time");
 	glUniform1f(uniformTime, static_cast<std::chrono::duration<float, std::milli>>(clk::now() - tPivot).count());
 
-	GLint uniformLifeTime = glGetUniformLocation(m_SolidRectShader, "u_LifeTime");
-	glUniform1f(uniformLifeTime, static_cast<std::chrono::duration<float, std::milli>>(std::chrono::milliseconds(1000)).count());
 
-	glDrawArrays(GL_TRIANGLES, 0, obj.Vertices.size());
+
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(attribPosition);
-	glDisableVertexAttribArray(attribVelocity);
-	glBindVertexArray(0);
 	glDisable(GL_BLEND);
 }

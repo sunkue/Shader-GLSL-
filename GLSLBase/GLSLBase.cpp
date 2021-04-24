@@ -22,11 +22,11 @@ int g_WindowSizeY = 500;
 
 void RenderScene(void)
 {
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Renderer Test
-	g_Renderer->Test();
+	g_Renderer->FsSandBox();
 
 	glutSwapBuffers();
 }
@@ -61,13 +61,13 @@ int main(int argc, char **argv)
 	glutCreateWindow("GLSL KPU");
 
 	glewInit();
-	if (glewIsSupported("GL_VERSION_4_4"))
+	if (glewIsSupported("GL_VERSION_4_6"))
 	{
-		std::cout << " GL Version is 4.4\n ";
+		std::cout << " GL Version is 4.6\n ";
 	}
 	else
 	{
-		std::cout << "GLEW 4.4 not supported\n ";
+		std::cout << "GLEW 4.6 not supported\n ";
 	}
 
 	// Initialize Renderer
