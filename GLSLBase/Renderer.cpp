@@ -24,9 +24,13 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 	m_WindowSizeX = windowSizeX;
 	m_WindowSizeY = windowSizeY;
 
+
 	//Load shaders
 	m_FSSandBoxShader = CompileShaders("./Shaders/SolidRect.vs", "./Shaders/SolidRect.fs");
 
+	// tresfdsdf
+	mRGB = CreatePngTexture("./RGB.png");
+	
 	//Create VBOs
 	CreateVertexBufferObjects();
 
@@ -57,14 +61,17 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 
 void Renderer::CreateVertexBufferObjects()
 {
-	constexpr float rectSize{ 0.95f };
+	constexpr float rectSize{ 0.5f };
 	float rect[]
 		=
 	{
-		-rectSize, -rectSize, 0.f, -rectSize, rectSize, 0.f, rectSize, rectSize, 0.f, //Triangle1
-		-rectSize, -rectSize, 0.f,  rectSize, rectSize, 0.f, rectSize, -rectSize, 0.f, //Triangle2
+		  -rectSize, -rectSize, 0.f,	0.0f, 0.0f
+		, -rectSize,  rectSize, 0.f,	0.0f, 1.0f
+		,  rectSize,  rectSize, 0.f,	1.0f, 1.0f
+		, -rectSize, -rectSize, 0.f,	0.0f, 0.0f
+		,  rectSize,  rectSize, 0.f,	1.0f, 1.0f
+		,  rectSize, -rectSize, 0.f,	1.0f, 0.0f
 	};
-
 	glGenBuffers(1, &m_VBORect);
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(rect), rect, GL_STATIC_DRAW);
@@ -307,30 +314,23 @@ void Renderer::FsSandBox()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-
-
 	GLint attribPosition = glGetAttribLocation(shader, "a_Position");
 	glEnableVertexAttribArray(attribPosition);
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
-	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, 0);
 
-	GLint uniformTime = glGetUniformLocation(shader, "u_Time");
-	glUniform1f(uniformTime, static_cast<std::chrono::duration<float, std::milli>>(clk::now() - tPivot).count());
+	GLint attribTex = glGetAttribLocation(shader, "a_TexPos");
+	glEnableVertexAttribArray(attribTex);
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBORect);
+	glVertexAttribPointer(attribTex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, reinterpret_cast<GLvoid*>(sizeof(float)*3));
 
-	GLint uniformPoint = glGetUniformLocation(shader, "u_Point");
-	glUniform3f(uniformPoint, 0.f, 0.f, 0.f);
-
-	constexpr size_t PointsNum{ 10 };
-	static GLfloat Points[PointsNum][3];
-	static bool init{ true };
-	if (init)for (int i = 0; i < PointsNum * 3; ++i, init = false)Points[0][i] = urd(dre);
-	GLint uniformPoints = glGetUniformLocation(shader, "u_Points");
-	glUniform3fv(uniformPoints, PointsNum, *Points);
-
-
-
+	GLuint uniformTex = glGetUniformLocation(shader, "u_TexSampler");
+	glUniform1i(uniformTex, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, mRGB);
+	
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(attribPosition);
+	glDisableVertexAttribArray(attribTex);
 	glDisable(GL_BLEND);
 }

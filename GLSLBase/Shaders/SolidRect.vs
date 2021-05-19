@@ -1,15 +1,14 @@
 #version 450
 
 in vec3 a_Position;
+in vec2 a_TexPos;
 
-uniform float u_Time;
+out vec2 v_TexPos;
 
-varying vec4 v_Color;
 
 void main()
-{
-	vec3 newPos = a_Position;
-	
-	gl_Position = vec4(a_Position, 1);
-	v_Color = gl_Position;
+{	
+	gl_Position = vec4(a_Position, 1.0f);
+
+	v_TexPos = a_TexPos;
 }

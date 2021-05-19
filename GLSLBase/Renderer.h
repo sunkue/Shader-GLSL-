@@ -50,5 +50,6 @@ private:
 
 	GLuint m_VBORect = 0;
 	GLuint m_FSSandBoxShader = 0;
+	GLuint mRGB = 0;
 };
 
