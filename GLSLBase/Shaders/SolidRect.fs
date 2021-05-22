@@ -9,6 +9,7 @@ float f(vec2 tex)
 {
 	float y = (abs(0.5f - tex.y) * 2);
 	y = y - 1.0f;
+	y = fract( y * 2.0f);
 	return y;
 }
 
