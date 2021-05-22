@@ -5,15 +5,15 @@ in vec2 v_TexPos;
 
 out vec4 FragColor;
 
-vec2 f(vec2 tex)
+float f(vec2 tex)
 {
-	tex *= 2.0f;
-	if(1.0f < tex.x)tex.y -= 0.5f;
-	return tex;
+	float y = (abs(0.5f - tex.y) * 2);
+	y = y - 1.0f;
+	return y;
 }
 
 void main()
 {
-	vec2 tex = f(v_TexPos);
+	vec2 tex = vec2( v_TexPos.x, f(v_TexPos) );
 	FragColor = texture(u_TexSampler, tex) + vec4(0.1f);
 }
