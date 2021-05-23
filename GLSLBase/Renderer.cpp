@@ -24,12 +24,17 @@ void Renderer::Initialize(int windowSizeX, int windowSizeY)
 	m_WindowSizeX = windowSizeX;
 	m_WindowSizeY = windowSizeY;
 
-
 	//Load shaders
 	m_FSSandBoxShader = CompileShaders("./Shaders/SolidRect.vs", "./Shaders/SolidRect.fs");
 
 	// tresfdsdf
 	mRGB = CreatePngTexture("./RGB.png");
+
+	// 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 	
 	//Create VBOs
 	CreateVertexBufferObjects();
@@ -328,7 +333,6 @@ void Renderer::FsSandBox()
 	glUniform1i(uniformTex, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mRGB);
-	
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(attribPosition);
 	glDisableVertexAttribArray(attribTex);
